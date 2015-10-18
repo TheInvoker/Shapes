@@ -1,0 +1,49 @@
+ <!DOCTYPE html>
+<html>
+	<head>
+		<title>Shape Wars</title>
+		
+		<!-- Include meta tag to ensure proper rendering and touch zooming -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		
+		<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+		
+		<script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
+		<script src="js/main.js"></script>
+		
+		<link rel="stylesheet" type="text/css" href="css/main.css">
+	</head>
+
+	<body>
+		
+		
+		<div id="shape_select" class="section">
+		
+			<h1>Choose Your Shape!</h1>
+		
+			<table>
+				<tr>
+					<td>
+						Jack
+						<div data-name="Jack" data-color="red" class="shape-preview" style="background-color:red;"></div>
+					</td>
+					<td>
+						Bob
+						<div data-name="Bob" data-color="blue" class="shape-preview" style="background-color:blue;"></div>
+					</td>
+				</tr>
+			</table>
+		
+		</div>
+		
+		<div id="shape_fight" class="section" style="display:none;">
+			
+			<div id="arena">
+			</div>
+			
+		</div>
+		
+		
+	</body>
+
+</html> 
