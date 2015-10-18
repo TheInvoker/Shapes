@@ -29,10 +29,8 @@ html, body {
 	position:absolute;
 	text-align:center;
 }
-.shape::before {
-	content:"";
-	display:block;
-	width: attr(data-hp);
+.hpbar {
+	width:100%;
 	height:5px;
 	background-color:Lime;
 }

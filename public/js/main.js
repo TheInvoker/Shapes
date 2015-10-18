@@ -1,4 +1,5 @@
 var socket = io();
+var myID;
 
 socket.on('youenter', function(data) {
 	
@@ -10,6 +11,8 @@ socket.on('youenter', function(data) {
 	var p_h = data.p_h;
 	var map_w = data.map_w;
 	var map_h = data.map_h;
+	
+	myID = data.id;
 	
 	$("#arena").css('width', map_w + "px");
 	$("#arena").css('height', map_h + "px");
@@ -68,9 +71,14 @@ socket.on('playerhit', function(data) {
 	var new_hp = hp - data.dmg;
 	
 	if (new_hp <= 0) {
+		if (player.attr("data-id") == myID) {
+			alert("You Lose!");
+			location.reload(); 
+		}
 		player.remove();
 	} else {
 		player.attr("data-hp", new_hp);
+		player.find("div.hpbar").css("width", new_hp + "px");
 	}
 });
 socket.on('playerbulletremove', function(data) {
@@ -136,7 +144,7 @@ function addPlayer(player, p_w, p_h) {
 	var hp = player.hp;
 
 	var shapeobj = $("<div/>");
-	shapeobj.html(name);
+	shapeobj.html("<div class='hpbar'></div>" + name);
 	shapeobj.addClass('shape');
 	shapeobj.addClass('noselect');
 	shapeobj.css('background-color', color);

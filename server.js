@@ -67,6 +67,7 @@ io.on('connection', function(socket){
 		};
 		
 		socket.emit('youenter', {
+			'id' : ID,
 			'players' : playerData,
 			'p_w' : player_width,
 			'p_h' : player_height,
@@ -165,8 +166,8 @@ io.on('connection', function(socket){
 						}
 					}
 				}
-				bullet.x += 5 * Math.cos(angle);
-				bullet.y += 5 * Math.sin(angle);
+				bullet.x += 10 * Math.cos(angle);
+				bullet.y += 10 * Math.sin(angle);
 			}
 		}, 100);
 	});
