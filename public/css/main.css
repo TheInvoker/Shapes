@@ -22,12 +22,25 @@ html, body {
 	background-image:url('/images/grass.png');
 	background-repeat:repeat;
 	position:relative;
+	border:5px solid #0c4800;
+	display:inline-block;
+}
+#chatboxContainer {
+	display:inline-block;
+}
+#chatbox {
+	width:216px;
+	height:390px;
+	border:1px solid black;
+	overflow-x:hidden;
+	overflow-y:auto;
 }
 
 .shape {
 	color:white;
 	position:absolute;
 	text-align:center;
+	box-shadow: 0px 0px 10px #000000;
 }
 .hpbar {
 	width:100%;
@@ -37,6 +50,7 @@ html, body {
 
 .bullet {
 	position:absolute;
+	box-shadow: 0px 0px 10px #000000;
 }
 
 

@@ -55,6 +55,19 @@ socket.on('youenter', function(data) {
 			'y' : shooty
 		});
 	});
+	
+	$('#sendMessage').submit(function() {
+		var message = $('#messageVal').val().trim();
+		if (message.length == 0) return false;
+		
+		$('#messageVal').val('');
+
+		socket.emit('sendmessage', {
+			'message' : message
+		});
+
+		return false;
+	});
 });
 
 socket.on('playerenter', function(data) {
@@ -64,6 +77,10 @@ socket.on('playerenter', function(data) {
 	addPlayer(player, p_w, p_h);
 });
 
+socket.on('sendmessage', function(data) {
+	$("#chatbox").append("<div><span style='color:" + data.color + "'>" + data.name + "</span>: " + data.message + "</div>");
+	scrollToBot();
+});
 
 socket.on('playerhit', function(data) {
 	var player = $("#arena > div.shape[data-id=" + data.id + "]");
@@ -81,20 +98,59 @@ socket.on('playerhit', function(data) {
 		player.find("div.hpbar").css("width", new_hp + "px");
 	}
 });
-socket.on('playerbulletremove', function(data) {
-	$("#arena > div.bullet[data-id=" + data.id + "]").remove();
-});
 socket.on('playerbullets', function(data) {
-	$("#arena > div.bullet").remove();
-	for(var bulletData in data) {
+	var mapBulletsObjs = $("#arena > div.bullet");
+	
+	var mapBullets = [];
+	for(var i=0; i<mapBulletsObjs.length; i+=1) {
+		mapBullets.push($(mapBulletsObjs[i]));
+	}
+	
+	mapBullets.sort(function(x, y) {
+		var x_ = parseInt(x.attr("data-id"), 10);
+		var y_ = parseInt(y.attr("data-id"), 10);
+		if (x_ < y_) {
+			return -1;
+		}
+		if (x_ > y_) {
+			return 1;
+		}
+		return 0;
+	});
+	
+	var i = 0, j = 0;
+	while (i < mapBullets.length && j < data.length) {
+		var curMapBullet = mapBullets[i];
+		var curMapBulletID = parseInt(curMapBullet.attr("data-id"), 10);
+		var curDataBullet = data[j];
+
+		if (curMapBulletID == curDataBullet.id) {
+			curMapBullet.css({
+				'left' : curDataBullet.x,
+				'top' : curDataBullet.y
+			});
+			i += 1;
+			j += 1;
+		}
+		else if (curMapBulletID < curDataBullet.id) {
+			curMapBullet.remove();
+			i += 1;
+		} 
+	}
+	for(i=i; i<mapBullets.length; i+=1) {
+		mapBullets[i].remove();
+	}
+	for(j=j; j<data.length; j+=1) {
+		curDataBullet = data[j];
+		
 		var bullet = $("<div/>");
 		bullet.addClass("bullet");
-		bullet.attr("data-id", data[bulletData].id);
-		bullet.css("background-color", data[bulletData].color);
-		bullet.css("width", data[bulletData].b_w + "px");
-		bullet.css("height", data[bulletData].b_h + "px");
-		bullet.css("left", data[bulletData].x);
-		bullet.css("top", data[bulletData].y);
+		bullet.attr("data-id", curDataBullet.id);
+		bullet.css("background-color", curDataBullet.color);
+		bullet.css("width", curDataBullet.b_w + "px");
+		bullet.css("height", curDataBullet.b_h + "px");
+		bullet.css("left", curDataBullet.x);
+		bullet.css("top", curDataBullet.y);
 		$("#arena").append(bullet);
 	}
 });
@@ -103,25 +159,33 @@ socket.on('playermoveup', function(data) {
 	var id = data.id;
 	var new_y = data.y;
 	
-	$("#arena > div.shape[data-id=" + id + "]").css('top', new_y + "px");
+	$("#arena > div.shape[data-id=" + id + "]").css({
+		'top': new_y + "px"
+	}, 'fast');
 });
 socket.on('playermovedown', function(data) {
 	var id = data.id;
 	var new_y = data.y;
 	
-	$("#arena > div.shape[data-id='" + id + "']").css('top', new_y + "px");
+	$("#arena > div.shape[data-id='" + id + "']").css({
+		'top': new_y + "px"
+	}, 'fast');
 });
 socket.on('playermoveleft', function(data) {
 	var id = data.id;
 	var new_x = data.x;
 
-	$("#arena > div.shape[data-id='" + id + "']").css('left', new_x + "px");
+	$("#arena > div.shape[data-id='" + id + "']").css({
+		'left': new_x + "px"
+	}, 'fast');
 });
 socket.on('playermoveright', function(data) {
 	var id = data.id;
 	var new_x = data.x;
 
-	$("#arena > div.shape[data-id='" + id + "']").css('left', new_x + "px");
+	$("#arena > div.shape[data-id='" + id + "']").css({
+		'left': new_x + "px"
+	});
 });
 
 socket.on('playerexit', function(data) {
@@ -158,8 +222,9 @@ function addPlayer(player, p_w, p_h) {
 	$("#arena").append(shapeobj);
 }
 
-
-
+function scrollToBot() {
+	$("#chatbox").animate({ scrollTop: $("#chatbox").height() }, "slow");
+}
 
 
 $(document).ready(function() {

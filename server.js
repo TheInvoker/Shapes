@@ -33,12 +33,37 @@ var server = app.listen(3000, function () {
 
 var io = require('socket.io').listen(server);
 
+
+
+
+var returnEmptyBulletsFlag = true;
 setInterval(function() {
-	if (Object.keys(bulletData).length > 0) {
-		console.log(JSON.stringify(bulletData));
-		io.emit('playerbullets', bulletData);
+	if (Object.keys(bulletData).length == 0) {
+		if (returnEmptyBulletsFlag) {
+			returnEmptyBulletsFlag = false;
+		} else {
+			return;
+		}
 	}
+	
+	var data = [];
+	for(var bullet in bulletData) {
+		data.push(bulletData[bullet]);
+	}
+	data.sort(function(x, y) {
+		if (x.id < y.id) {
+			return -1;
+		}
+		if (x.id > y.id) {
+			return 1;
+		}
+		return 0;
+	});
+	io.emit('playerbullets', data);
 }, 100);
+
+
+
 
 io.on('connection', function(socket){
 	console.log('a user connected');
@@ -115,6 +140,15 @@ io.on('connection', function(socket){
 		});
 	});
 
+	socket.on('sendmessage', function(data) {
+		var ID = socket.id;
+		io.emit('sendmessage', {
+			'message' : data.message,
+			'name' : playerData[ID].name,
+			'color' : playerData[ID].color
+		});
+	});
+	
 	socket.on('shoot', function(data){	
 		var ID = socket.id;
 		
@@ -148,20 +182,17 @@ io.on('connection', function(socket){
 				io.emit('playerbulletremove', {
 					'id' : bullet.id
 				});
-				delete bulletData[bullet.id];
+				deleteBullet(bullet.id);
 			} else {
 				for(var player in playerData) {
 					if (playerData.hasOwnProperty(player) && playerData[player].id != bullet.pid) {
 						if (inPlayer(bullet.x, bullet.y, playerData[player])) {
 							clearInterval(interval);
-							io.emit('playerbulletremove', {
-								'id' : bullet.id
-							});
 							io.emit('playerhit', {
 								'id' : playerData[player].id,
 								'dmg' : 5
 							});
-							delete bulletData[bullet.id];
+							deleteBullet(bullet.id);
 							return;
 						}
 					}
@@ -187,9 +218,12 @@ io.on('connection', function(socket){
 });
 
 
-
-
-
+function deleteBullet(id) {
+	delete bulletData[id];
+	if (Object.keys(bulletData).length == 0) {
+		returnEmptyBulletsFlag = true;
+	}
+}
 function inPlayer(x, y, player) {
 	return x >= player.x && x <= player.x + player_width && y >= player.y && y <= player.y + player_height;
 }
