@@ -14,6 +14,8 @@ socket.on('youenter', function(data) {
 	
 	myID = data.id;
 	
+	addMessages(data.messages);
+	
 	$("#arena").css('width', map_w + "px");
 	$("#arena").css('height', map_h + "px");
 	
@@ -78,8 +80,7 @@ socket.on('playerenter', function(data) {
 });
 
 socket.on('sendmessage', function(data) {
-	$("#chatbox").append("<div><span style='color:" + data.color + "'>" + data.name + "</span>: " + data.message + "</div>");
-	scrollToBot();
+	addMessages([data]);
 });
 
 socket.on('playerhit', function(data) {
@@ -199,6 +200,13 @@ socket.on('invalidname', function(data) {
 });
 
 
+function addMessages(messages) {
+	for(var i=0; i<messages.length; i+=1) {
+		var data = messages[i];
+		$("#chatbox").append("<div><span style='color:" + data.color + "'>" + data.name + "</span>: " + data.message + "</div>");
+	}
+	scrollToBot();
+}
 function addPlayer(player, p_w, p_h) {
 	var id = player.id;
 	var name = player.name;

@@ -8,6 +8,7 @@ var player_width = 50;
 var player_height = 50;
 var bullet_width = 5;
 var bullet_height = 5;
+var messageData = [];
 var playerData = {};
 var bulletData = {};
 var bulletID = 1;
@@ -97,7 +98,8 @@ io.on('connection', function(socket){
 			'p_w' : player_width,
 			'p_h' : player_height,
 			'map_w' : map_width,
-			'map_h' : map_height
+			'map_h' : map_height,
+			'messages' : messageData
 		});
 		
 		socket.broadcast.emit('playerenter', {
@@ -142,11 +144,14 @@ io.on('connection', function(socket){
 
 	socket.on('sendmessage', function(data) {
 		var ID = socket.id;
-		io.emit('sendmessage', {
+		var message = {
 			'message' : data.message,
 			'name' : playerData[ID].name,
 			'color' : playerData[ID].color
-		});
+		};
+		
+		messageData.push(message);
+		io.emit('sendmessage', message);
 	});
 	
 	socket.on('shoot', function(data){	
