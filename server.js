@@ -71,7 +71,6 @@ io.on('connection', function(socket){
 	});
 	socket.on('movedown', function(data){
 		var ID = socket.id;
-		playerData[ID].y += 5;
 		playerData[ID].y = Math.min(map_height - player_height, playerData[ID].y+5);
 		io.emit('playermovedown', {
 			'id' : ID,
