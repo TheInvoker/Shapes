@@ -1,7 +1,10 @@
 var socket = io();
 
-
 socket.on('youenter', function(data) {
+	
+	$("#shape_select").hide();
+	$("#shape_fight").show();
+	
 	var players = data.players;
 	var p_w = data.p_w;
 	var p_h = data.p_h;
@@ -21,7 +24,6 @@ socket.on('youenter', function(data) {
 		var valuekey = event.charCode;
 		var key = String.fromCharCode(valuekey);
 		
-		
 		if (key == "w") {
 			socket.emit('moveup', 1);
 		}
@@ -38,6 +40,18 @@ socket.on('youenter', function(data) {
 			socket.emit('moveright', 1);
 		}
 	});
+	
+
+	$('#arena').click(function(e) {
+		var offset = $(this).offset();
+		var shootx = e.pageX - offset.left;
+		var shooty = e.pageY - offset.top;
+
+		socket.emit('shoot', {
+			'x' : shootx,
+			'y' : shooty
+		});
+	});
 });
 
 socket.on('playerenter', function(data) {
@@ -47,34 +61,69 @@ socket.on('playerenter', function(data) {
 	addPlayer(player, p_w, p_h);
 });
 
+
+socket.on('playerhit', function(data) {
+	var player = $("#arena > div.shape[data-id=" + data.id + "]");
+	var hp = player.attr("data-hp");
+	var new_hp = hp - data.dmg;
+	
+	if (new_hp <= 0) {
+		player.remove();
+	} else {
+		player.attr("data-hp", new_hp);
+	}
+});
+socket.on('playerbulletremove', function(data) {
+	$("#arena > div.bullet[data-id=" + data.id + "]").remove();
+});
+socket.on('playerbullets', function(data) {
+	$("#arena > div.bullet").remove();
+	for(var bulletData in data) {
+		var bullet = $("<div/>");
+		bullet.addClass("bullet");
+		bullet.attr("data-id", data[bulletData].id);
+		bullet.css("background-color", data[bulletData].color);
+		bullet.css("width", data[bulletData].b_w + "px");
+		bullet.css("height", data[bulletData].b_h + "px");
+		bullet.css("left", data[bulletData].x);
+		bullet.css("top", data[bulletData].y);
+		$("#arena").append(bullet);
+	}
+});
+
 socket.on('playermoveup', function(data) {
 	var id = data.id;
 	var new_y = data.y;
 	
-	$("#arena > div[data-id=" + id + "]").css('top', new_y + "px");
+	$("#arena > div.shape[data-id=" + id + "]").css('top', new_y + "px");
 });
 socket.on('playermovedown', function(data) {
 	var id = data.id;
 	var new_y = data.y;
 	
-	$("#arena > div[data-id='" + id + "']").css('top', new_y + "px");
+	$("#arena > div.shape[data-id='" + id + "']").css('top', new_y + "px");
 });
 socket.on('playermoveleft', function(data) {
 	var id = data.id;
 	var new_x = data.x;
 
-	$("#arena > div[data-id='" + id + "']").css('left', new_x + "px");
+	$("#arena > div.shape[data-id='" + id + "']").css('left', new_x + "px");
 });
 socket.on('playermoveright', function(data) {
 	var id = data.id;
 	var new_x = data.x;
 
-	$("#arena > div[data-id='" + id + "']").css('left', new_x + "px");
+	$("#arena > div.shape[data-id='" + id + "']").css('left', new_x + "px");
 });
 
 socket.on('playerexit', function(data) {
 	var id = data.id;
-	$("#arena > div[data-id='" + id + "']").remove();
+	$("#arena > div.shape[data-id='" + id + "']").remove();
+});
+
+
+socket.on('invalidname', function(data) {
+	alert(data.message);
 });
 
 
@@ -89,12 +138,14 @@ function addPlayer(player, p_w, p_h) {
 	var shapeobj = $("<div/>");
 	shapeobj.html(name);
 	shapeobj.addClass('shape');
+	shapeobj.addClass('noselect');
 	shapeobj.css('background-color', color);
 	shapeobj.attr('data-id', id);
 	shapeobj.css('left', x);
 	shapeobj.css('top', y);
 	shapeobj.css('width', p_w + "px");
 	shapeobj.css('height', p_h + "px");
+	shapeobj.css('line-height', p_h + "px");
 	shapeobj.attr('data-hp', hp);
 	$("#arena").append(shapeobj);
 }
@@ -105,11 +156,19 @@ function addPlayer(player, p_w, p_h) {
 
 $(document).ready(function() {
 	
+	$(".shape-preview").each(function(i,x) {
+		$(x).html($(x).attr("data-name")).css("background-color", $(x).attr("data-color"));
+	});
+	
 	$(".shape-preview").click(function() {
-		$("#shape_select").hide();
-		$("#shape_fight").show();
 		
-		var name = $(this).attr("data-name");
+		var name = $("#nameEnter").val().trim();
+		
+		if (name == "") {
+			alert("Invalid name");
+			return;
+		}
+		
 		var color = $(this).attr("data-color");
 		
 		socket.emit('enter', {

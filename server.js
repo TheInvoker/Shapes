@@ -6,8 +6,11 @@ var map_width = 800;
 var map_height = 400;
 var player_width = 50;
 var player_height = 50;
+var bullet_width = 5;
+var bullet_height = 5;
 var playerData = {};
-
+var bulletData = {};
+var bulletID = 1;
 
 
 
@@ -30,21 +33,38 @@ var server = app.listen(3000, function () {
 
 var io = require('socket.io').listen(server);
 
+setInterval(function() {
+	if (Object.keys(bulletData).length > 0) {
+		console.log(JSON.stringify(bulletData));
+		io.emit('playerbullets', bulletData);
+	}
+}, 100);
+
 io.on('connection', function(socket){
 	console.log('a user connected');
-	
-	var ID = socket.id;
-	playerData[ID] = {
-		'id' : ID,
-		'x' : map_width/2,
-		'y' : map_height/2,
-		'hp' : 100
-	};
 
 	socket.on('enter', function(data){
 		var ID = socket.id;
-		playerData[ID].name = data.name;
-		playerData[ID].color = data.color;
+		
+		for(var player in playerData) {
+			if (playerData.hasOwnProperty(player)) {
+				if (playerData[player].name == data.name) {
+					socket.emit('invalidname', {
+						'message' : 'Name is already taken'
+					});	
+					return;
+				}
+			}
+		}
+		
+		playerData[ID] = {
+			'id' : ID,
+			'x' : map_width/2,
+			'y' : map_height/2,
+			'hp' : player_width,
+			'name' : data.name,
+			'color' : data.color
+		};
 		
 		socket.emit('youenter', {
 			'players' : playerData,
@@ -94,6 +114,63 @@ io.on('connection', function(socket){
 		});
 	});
 
+	socket.on('shoot', function(data){	
+		var ID = socket.id;
+		
+		var sx = playerData[ID].x + player_width/2;
+		var sy = playerData[ID].y + player_height/2;
+		
+		var angle = angleBetweenTwoPointsRad({
+			'x' : sx,
+			'y' : sy
+		}, {
+			'x' : data.x,
+			'y' : data.y
+		});
+		
+		var bullet = {
+			'id' : bulletID,
+			'pid' : ID,
+			'color' : playerData[ID].color,
+			'x' : sx,
+			'y' : sy,
+			'b_w' : bullet_width,
+			'b_h' : bullet_height
+		};
+		
+		bulletData[bulletID] = bullet;
+		bulletID += 1;
+		
+		var interval = setInterval(function() {
+			if (!inArena(bullet.x, bullet.y)) {
+				clearInterval(interval);
+				io.emit('playerbulletremove', {
+					'id' : bullet.id
+				});
+				delete bulletData[bullet.id];
+			} else {
+				for(var player in playerData) {
+					if (playerData.hasOwnProperty(player) && playerData[player].id != bullet.pid) {
+						if (inPlayer(bullet.x, bullet.y, playerData[player])) {
+							clearInterval(interval);
+							io.emit('playerbulletremove', {
+								'id' : bullet.id
+							});
+							io.emit('playerhit', {
+								'id' : playerData[player].id,
+								'dmg' : 5
+							});
+							delete bulletData[bullet.id];
+							return;
+						}
+					}
+				}
+				bullet.x += 5 * Math.cos(angle);
+				bullet.y += 5 * Math.sin(angle);
+			}
+		}, 100);
+	});
+	
 	socket.on('disconnect', function() {
 		console.log('a user left');
 		
@@ -107,3 +184,22 @@ io.on('connection', function(socket){
 		});
 	});
 });
+
+
+
+
+
+function inPlayer(x, y, player) {
+	return x >= player.x && x <= player.x + player_width && y >= player.y && y <= player.y + player_height;
+}
+function inArena(x, y) {
+	return x >= 0 && x <= map_width && y >= 0 && y <= map_height;
+}
+function angleBetweenTwoPointsDeg(p1, p2) {
+	var angleDeg = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+	return angleDeg;
+}
+function angleBetweenTwoPointsRad(p1, p2) {
+	var angleRad = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+	return angleRad;
+}
